@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI Emotion &amp; Sentiment Intelligence Dashboard</title>
+<style>
+  :root {
+    --bg: #f4f6fb;
+    --card: #ffffff;
+    --ink: #1a2233;
+    --muted: #667085;
+    --line: #e4e7ef;
+    --brand: #4f46e5;
+    --brand-dark: #3730a3;
+    --pos: #16a34a;
+    --pos-bg: #dcfce7;
+    --neg: #dc2626;
+    --neg-bg: #fee2e2;
+    --neu: #64748b;
+    --neu-bg: #e2e8f0;
+    --radius: 14px;
+    --shadow: 0 1px 3px rgba(16, 24, 40, .08), 0 4px 16px rgba(16, 24, 40, .06);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.55;
+  }
+  header {
+    background: linear-gradient(135deg, #312e81, #4f46e5 55%, #7c3aed);
+    color: #fff;
+    padding: 34px 20px 30px;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 0 16px; }
+  header h1 { font-size: 1.7rem; letter-spacing: -.01em; }
+  header p { opacity: .88; margin-top: 6px; max-width: 640px; }
+  .status {
+    display: inline-flex; align-items: center; gap: 7px;
+    margin-top: 14px; background: rgba(255,255,255,.14);
+    border: 1px solid rgba(255,255,255,.25);
+    padding: 5px 12px; border-radius: 999px; font-size: .85rem;
+  }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: #4ade80; }
+  .dot.off { background: #fbbf24; }
+  main { max-width: 960px; margin: -14px auto 40px; padding: 0 16px; }
+  .card {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 22px; margin-top: 18px;
+  }
+  .card h2 { font-size: 1.08rem; margin-bottom: 4px; }
+  .card .sub { color: var(--muted); font-size: .9rem; margin-bottom: 14px; }
+  textarea {
+    width: 100%; min-height: 96px; resize: vertical;
+    border: 1px solid var(--line); border-radius: 10px;
+    padding: 12px 14px; font: inherit; font-size: .98rem;
+    outline: none; transition: border-color .15s, box-shadow .15s;
+  }
+  textarea:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(79,70,229,.15); }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
+  .examples { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip {
+    border: 1px solid var(--line); background: #f8fafc; border-radius: 999px;
+    padding: 5px 12px; font-size: .83rem; cursor: pointer; color: #334155;
+  }
+  .chip:hover { border-color: var(--brand); color: var(--brand); }
+  button {
+    background: var(--brand); color: #fff; border: none; cursor: pointer;
+    font: inherit; font-weight: 600; border-radius: 10px; padding: 11px 22px;
+    transition: background .15s;
+  }
+  button:hover:not(:disabled) { background: var(--brand-dark); }
+  button:disabled { opacity: .55; cursor: wait; }
+  button.secondary { background: #eef2ff; color: var(--brand-dark); }
+  button.secondary:hover:not(:disabled) { background: #e0e7ff; }
+  .hint { font-size: .82rem; color: var(--muted); }
+  /* Result */
+  .result-head { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+  .badge {
+    font-weight: 700; font-size: .95rem; padding: 7px 16px; border-radius: 999px;
+  }
+  .badge.POSITIVE { background: var(--pos-bg); color: var(--pos); }
+  .badge.NEGATIVE { background: var(--neg-bg); color: var(--neg); }
+  .badge.NEUTRAL  { background: var(--neu-bg); color: var(--neu); }
+  .conf { font-size: 1.5rem; font-weight: 800; }
+  .conf small { font-size: .8rem; color: var(--muted); font-weight: 500; display: block; }
+  .top-emo { margin-left: auto; text-align: right; }
+  .top-emo strong { text-transform: capitalize; font-size: 1.05rem; }
+  .top-emo span { display: block; font-size: .8rem; color: var(--muted); }
+  .bars { margin-top: 18px; display: grid; gap: 10px; }
+  .bar-row { display: grid; grid-template-columns: 92px 1fr 52px; align-items: center; gap: 10px; font-size: .9rem; }
+  .bar-row .lbl { text-transform: capitalize; color: #334155; }
+  .bar-track { background: #eef2f7; border-radius: 999px; height: 10px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #818cf8, #4f46e5); width: 0; transition: width .6s ease; }
+  .bar-row .val { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .engine { margin-top: 14px; font-size: .78rem; color: var(--muted); }
+  .error {
+    background: #fef2f2; border: 1px solid #fecaca; color: #991b1b;
+    border-radius: 10px; padding: 12px 14px; margin-top: 14px; font-size: .92rem;
+  }
+  /* History */
+  .hist-item {
+    border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px;
+    margin-top: 10px; display: flex; gap: 12px; align-items: flex-start;
+  }
+  .hist-item .txt { flex: 1; min-width: 0; }
+  .hist-item .txt p { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hist-item .meta { font-size: .8rem; color: var(--muted); margin-top: 2px; }
+  .mini-badge { font-weight: 700; font-size: .78rem; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+  .mini-badge.POSITIVE { background: var(--pos-bg); color: var(--pos); }
+  .mini-badge.NEGATIVE { background: var(--neg-bg); color: var(--neg); }
+  .mini-badge.NEUTRAL  { background: var(--neu-bg); color: var(--neu); }
+  .empty { color: var(--muted); font-size: .92rem; }
+  /* Batch */
+  input[type="file"] { font: inherit; font-size: .9rem; }
+  .summary-chips { display: flex; gap: 10px; flex-wrap: wrap; margin: 14px 0 6px; }
+  .sum-chip { background: #f8fafc; border: 1px solid var(--line); border-radius: 10px; padding: 8px 14px; font-size: .9rem; }
+  .sum-chip strong { font-size: 1.15rem; }
+  table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: .88rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: .8rem; text-transform: uppercase; letter-spacing: .03em; }
+  td.text-cell { max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .table-wrap { overflow-x: auto; }
+  footer { text-align: center; color: var(--muted); font-size: .83rem; padding: 10px 0 30px; }
+  .hidden { display: none !important; }
+  @media (max-width: 560px) {
+    header h1 { font-size: 1.35rem; }
+    .top-emo { margin-left: 0; text-align: left; }
+    .bar-row { grid-template-columns: 78px 1fr 46px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>🧠 AI Emotion &amp; Sentiment Intelligence Dashboard</h1>
+    <p>Real-time sentiment analysis and emotion detection, powered by Hugging Face transformer models. Type a sentence, upload a CSV, and see what the AI feels.</p>
+    <div class="status"><span class="dot off" id="statusDot"></span><span id="statusText">Checking backend…</span></div>
+  </div>
+</header>
+
+<main>
+  <!-- Single text analysis -->
+  <section class="card">
+    <h2>Analyse a text</h2>
+    <p class="sub">Paste any sentence — a review, a tweet, a message — and get its sentiment plus a full emotion breakdown.</p>
+    <textarea id="textInput" placeholder="e.g. I absolutely love this product, it made my whole day better!"></textarea>
+    <div class="row">
+      <button id="analyzeBtn">Analyse</button>
+      <div class="examples">
+        <span class="chip" data-example="I absolutely love this product, it made my whole day better!">😊 Positive</span>
+        <span class="chip" data-example="This is the worst service I have ever experienced. I am furious.">😡 Negative</span>
+        <span class="chip" data-example="I am so nervous about tomorrow's exam, I can barely sleep.">😟 Anxious</span>
+        <span class="chip" data-example="Wow, I did not expect that at all! What a surprise!">😲 Surprised</span>
+      </div>
+    </div>
+    <div id="resultBox" class="hidden"></div>
+    <div id="errorBox" class="error hidden"></div>
+  </section>
+
+  <!-- History -->
+  <section class="card">
+    <div class="row" style="margin-top:0; justify-content: space-between;">
+      <div>
+        <h2>History</h2>
+        <p class="sub" style="margin-bottom:0;">Your recent analyses, saved in this browser.</p>
+      </div>
+      <button class="secondary" id="clearHistoryBtn">Clear history</button>
+    </div>
+    <div id="historyList" style="margin-top: 6px;"></div>
+  </section>
+
+  <!-- Batch CSV upload -->
+  <section class="card">
+    <h2>Batch analysis (CSV)</h2>
+    <p class="sub">Upload a CSV with a <code>text</code> column (up to 500 rows). Every row is analysed and summarised.</p>
+    <div class="row">
+      <input type="file" id="csvFile" accept=".csv" />
+      <button id="batchBtn">Analyse CSV</button>
+      <button class="secondary" id="sampleCsvBtn" type="button">Download sample CSV</button>
+    </div>
+    <p class="hint" id="batchHint">Tip: the sample CSV has 10 example rows so you can try it instantly.</p>
+    <div id="batchSummary" class="hidden"></div>
+    <div id="batchError" class="error hidden"></div>
+    <div class="table-wrap hidden" id="batchTableWrap">
+      <table>
+        <thead><tr><th>Text</th><th>Sentiment</th><th>Confidence</th><th>Top emotion</th></tr></thead>
+        <tbody id="batchBody"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<footer>Built with FastAPI + Hugging Face transformers · Sentiment: DistilBERT (SST-2) · Emotion: DistilRoBERTa (7 emotions)</footer>
+
+<script>
+const API = ""; // same origin — the backend serves this page
+const $ = (id) => document.getElementById(id);
+const HISTORY_KEY = "emo-history-v1";
+
+/* ---------- backend status ---------- */
+async function checkHealth() {
+  try {
+    const res = await fetch(API + "/health");
+    const data = await res.json();
+    const dot = $("statusDot"), txt = $("statusText");
+    if (data.status === "ok") {
+      dot.classList.remove("off");
+      txt.textContent = "Backend online · engine: " + data.engine +
+        (data.models_loaded ? " · models ready" : " · models loading…");
+    } else {
+      txt.textContent = "Backend responded, status: " + data.status;
+    }
+  } catch (e) {
+    $("statusText").textContent = "Backend unreachable — start it with: uvicorn backend.app.main:app --port 8000";
+  }
+}
+
+/* ---------- single analysis ---------- */
+function emotionBars(emotions) {
+  return emotions.map(e => `
+    <div class="bar-row">
+      <span class="lbl">${e.label}</span>
+      <div class="bar-track"><div class="bar-fill" data-w="${(e.score * 100).toFixed(1)}"></div></div>
+      <span class="val">${(e.score * 100).toFixed(1)}%</span>
+    </div>`).join("");
+}
+
+function renderResult(r) {
+  $("resultBox").innerHTML = `
+    <div style="margin-top:18px">
+      <div class="result-head">
+        <span class="badge ${r.sentiment}">${r.sentiment}</span>
+        <div class="conf">${(r.sentiment_score * 100).toFixed(1)}%<small>confidence</small></div>
+        <div class="top-emo"><strong>${r.top_emotion}</strong><span>top emotion</span></div>
+      </div>
+      <div class="bars">${emotionBars(r.emotions)}</div>
+      <p class="engine">Engine: ${r.engine === "transformers" ? "Hugging Face transformers (DistilBERT + DistilRoBERTa)" : "fallback classifier (built-in, trained)"} · "${escapeHtml(r.text.slice(0, 120))}${r.text.length > 120 ? "…" : ""}"</p>
+    </div>`;
+  $("resultBox").classList.remove("hidden");
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    document.querySelectorAll(".bar-fill").forEach(el => { el.style.width = el.dataset.w + "%"; });
+  }));
+}
+
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+async function analyze() {
+  const text = $("textInput").value.trim();
+  const err = $("errorBox"), btn = $("analyzeBtn");
+  err.classList.add("hidden");
+  if (!text) { err.textContent = "Please type or paste some text first."; err.classList.remove("hidden"); return; }
+  btn.disabled = true; btn.textContent = "Analysing…";
+  try {
+    const res = await fetch(API + "/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || ("HTTP " + res.status));
+    renderResult(data);
+    saveHistory(data);
+  } catch (e) {
+    err.textContent = "Could not analyse: " + e.message;
+    err.classList.remove("hidden");
+  } finally {
+    btn.disabled = false; btn.textContent = "Analyse";
+  }
+}
+
+$("analyzeBtn").addEventListener("click", analyze);
+$("textInput").addEventListener("keydown", (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key === "Enter") analyze();
+});
+document.querySelectorAll(".chip").forEach(chip => {
+  chip.addEventListener("click", () => { $("textInput").value = chip.dataset.example; analyze(); });
+});
+
+/* ---------- history (localStorage) ---------- */
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); }
+  catch { return []; }
+}
+function saveHistory(r) {
+  const items = loadHistory();
+  items.unshift({ text: r.text, sentiment: r.sentiment, score: r.sentiment_score, top: r.top_emotion, at: new Date().toLocaleString() });
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(items.slice(0, 20)));
+  renderHistory();
+}
+function renderHistory() {
+  const items = loadHistory();
+  const box = $("historyList");
+  if (!items.length) { box.innerHTML = '<p class="empty">No analyses yet — try one above.</p>'; return; }
+  box.innerHTML = items.map(h => `
+    <div class="hist-item">
+      <span class="mini-badge ${h.sentiment}">${h.sentiment}</span>
+      <div class="txt"><p>${escapeHtml(h.text)}</p>
+      <div class="meta">${escapeHtml(h.top)} · ${(h.score * 100).toFixed(1)}% · ${escapeHtml(h.at)}</div></div>
+    </div>`).join("");
+}
+$("clearHistoryBtn").addEventListener("click", () => {
+  localStorage.removeItem(HISTORY_KEY); renderHistory();
+});
+
+/* ---------- batch CSV ---------- */
+$("sampleCsvBtn").addEventListener("click", () => {
+  const rows = [["text"],
+    ["I love this new phone, the camera is incredible!"],
+    ["The delivery was late and the box was damaged. Terrible."],
+    ["I am so nervous about my interview tomorrow."],
+    ["Wow, I got the job! I cannot believe it!"],
+    ["The movie was boring and far too long."],
+    ["Thank you for the wonderful support, you made my day."],
+    ["I feel so sad and lonely today."],
+    ["This update is amazing, everything is faster now."],
+    ["I am furious, my order still has not arrived."],
+    ["It is an okay product, nothing special."]];
+  const csv = rows.map(r => '"' + r[0].replace(/"/g, '""') + '"').join("\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+  a.download = "sample_reviews.csv"; a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+async function analyzeBatch() {
+  const file = $("csvFile").files[0];
+  const err = $("batchError"), btn = $("batchBtn");
+  err.classList.add("hidden"); $("batchSummary").classList.add("hidden"); $("batchTableWrap").classList.add("hidden");
+  if (!file) { err.textContent = "Please choose a CSV file first."; err.classList.remove("hidden"); return; }
+  btn.disabled = true; btn.textContent = "Analysing…";
+  try {
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch(API + "/analyze-batch", { method: "POST", body: form });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || ("HTTP " + res.status));
+    const s = data.summary;
+    const topEmo = Object.entries(s.top_emotions).sort((a, b) => b[1] - a[1])[0];
+    $("batchSummary").innerHTML = `
+      <div class="summary-chips">
+        <span class="sum-chip">📄 <strong>${data.total}</strong> rows</span>
+        <span class="sum-chip">😊 <strong>${s.positive}</strong> positive</span>
+        <span class="sum-chip">😡 <strong>${s.negative}</strong> negative</span>
+        <span class="sum-chip">😐 <strong>${s.neutral}</strong> neutral</span>
+        <span class="sum-chip">Top emotion: <strong>${topEmo ? topEmo[0] + " (" + topEmo[1] + ")" : "—"}</strong></span>
+        <span class="sum-chip">Engine: <strong>${data.engine}</strong></span>
+      </div>`;
+    $("batchSummary").classList.remove("hidden");
+    $("batchBody").innerHTML = data.results.map(r => `
+      <tr>
+        <td class="text-cell" title="${escapeHtml(r.text)}">${escapeHtml(r.text)}</td>
+        <td><span class="mini-badge ${r.sentiment}">${r.sentiment}</span></td>
+        <td>${(r.sentiment_score * 100).toFixed(1)}%</td>
+        <td style="text-transform:capitalize">${r.top_emotion}</td>
+      </tr>`).join("");
+    $("batchTableWrap").classList.remove("hidden");
+  } catch (e) {
+    err.textContent = "Batch failed: " + e.message;
+    err.classList.remove("hidden");
+  } finally {
+    btn.disabled = false; btn.textContent = "Analyse CSV";
+  }
+}
+$("batchBtn").addEventListener("click", analyzeBatch);
+
+/* ---------- init ---------- */
+checkHealth();
+renderHistory();
+</script>
+</body>
+</html>
